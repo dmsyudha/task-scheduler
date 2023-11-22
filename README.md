@@ -40,3 +40,8 @@ go test -timeout 30s -run ^TestScheduler$ github.com/dmsyudha/task-scheduler/sch
 ```
 
 The tests check that tasks are correctly added and removed from the scheduler.
+
+## Example Video
+
+https://github.com/dmsyudha/task-scheduler/assets/10308616/2e20a44c-63bb-487d-9727-d84183e2af5c
+
