@@ -29,7 +29,7 @@ To build a function plugin, use the `go build -buildmode=plugin` command. For ex
 go build -buildmode=plugin -o functions/hello.so functions/hello.go
 ```
 
-Then, when adding a task, enter `hello.so` as the function file name.
+Then, when adding a task, enter `hello` as the function file name.
 
 ## Testing
 

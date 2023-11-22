@@ -5,69 +5,74 @@ import (
 	"fmt"
 	"os"
 	"plugin"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dmsyudha/task-scheduler/scheduler"
 )
 
+func getUserInput(prompt string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(prompt)
+	input, _ := reader.ReadString('\n')
+	return strings.TrimSpace(input)
+}
+
+func getFunction(funcFile string) (func(), error) {
+	p, err := plugin.Open("./functions/" + funcFile + ".so")
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := p.Lookup("Function")
+	if err != nil {
+		return nil, err
+	}
+
+	function, ok := f.(func())
+	if !ok {
+		return nil, fmt.Errorf("function has wrong signature")
+	}
+
+	return function, nil
+}
+
 func main() {
 	s := scheduler.NewScheduler()
-
-	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		fmt.Println("1. Add task")
 		fmt.Println("2. Remove task")
 		fmt.Println("3. Exit")
-		fmt.Print("Enter choice: ")
 
-		choice, _ := reader.ReadString('\n')
+		switch getUserInput("Enter choice: ") {
+		case "1":
+			id := getUserInput("Enter task ID: ")
+			name := getUserInput("Enter task name: ")
+			execTime, _ := strconv.Atoi(getUserInput("Enter task execution time (in seconds): "))
+			funcFile := getUserInput("Enter function file name: ")
 
-		switch choice {
-		case "1\n":
-			fmt.Print("Enter task ID: ")
-			id, _ := reader.ReadString('\n')
-
-			fmt.Print("Enter task name: ")
-			name, _ := reader.ReadString('\n')
-
-			fmt.Print("Enter task execution time (in seconds): ")
-			var execTime int
-			fmt.Scanf("%d", &execTime)
-
-			fmt.Print("Enter function file name: ")
-			funcFile, _ := reader.ReadString('\n')
-			funcFile = strings.TrimSpace(funcFile)
-
-			p, err := plugin.Open("./functions/"+funcFile)
+			function, err := getFunction(funcFile)
 			if err != nil {
-				fmt.Println("Error loading function:", err)
-				continue
-			}
-
-			f, err := p.Lookup("Function")
-			if err != nil {
-				fmt.Println("Error finding function:", err)
-				continue
-			}
-
-			function, ok := f.(func())
-			if !ok {
-				fmt.Println("Error: function has wrong signature")
+				fmt.Println("Error:", err)
 				continue
 			}
 
 			t := scheduler.NewTask(id, name, time.Now().Add(time.Duration(execTime)*time.Second), function)
 
-			s.AddTask(t)
-		case "2\n":
-			fmt.Print("Enter task ID to remove: ")
-			id, _ := reader.ReadString('\n')
-
+			err = s.AddTask(t)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+		case "2":
+			id := getUserInput("Enter task ID to remove: ")
 			s.RemoveTask(id)
-		case "3\n":
+		case "3":
 			return
+		default:
+			fmt.Println("Error: Invalid choice")
 		}
 	}
 }
